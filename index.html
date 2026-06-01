@@ -143,6 +143,8 @@
       border-radius: 20px;
       font-size: 15px;
       font-weight: bold;
+      cursor: pointer;
+      user-select: none;
     }
     .pill.great { background: linear-gradient(135deg,#fff5b0,#ffe060); color: #6a4000; }
     .pill.good  { background: #ffffff; border: 1px solid #ddeef8; color: #8a6000; }
@@ -188,6 +190,7 @@
     .modal-sheet {
       background: white; border-radius: 22px 22px 0 0;
       padding: 22px 20px 44px; width: 100%;
+      max-height: 85vh; overflow-y: auto;
       animation: slideUp 0.25s ease;
     }
     @keyframes slideUp { from{transform:translateY(60%)} to{transform:translateY(0)} }
@@ -283,7 +286,7 @@
 
 <div class="footer">Happy Walking 開運方位 2026年6月</div>
 
-<button class="add-triple-btn" onclick="openModal()" title="三重丸を追加">＋</button>
+<!-- add-triple-btn は非表示（タップで直接トグルに変更） -->
 
 <div id="modal-overlay" style="display:none" class="modal-overlay" onclick="closeModal(event)">
   <div class="modal-sheet" onclick="event.stopPropagation()">
@@ -376,13 +379,23 @@ function nowZodiac() {
 }
 
 // ── 三重丸データ管理 ──
-const TRIPLE_KEY = 'hw_triple_2026_05';
+const TRIPLE_KEY = 'hw_triple_2026_06';
 function loadTriples() {
   try { return JSON.parse(localStorage.getItem(TRIPLE_KEY)||'[]'); } catch(e) { return []; }
 }
 function saveTripleData(arr) { localStorage.setItem(TRIPLE_KEY, JSON.stringify(arr)); }
 function getTriple(month, day, zodiac, dir) {
   return loadTriples().find(t => t.month===month && t.day===day && t.zodiac===zodiac && t.dir===dir);
+}
+
+// ── タップで三重丸トグル ──
+function toggleTriple(month, day, zodiac, dir) {
+  const arr = loadTriples();
+  const idx = arr.findIndex(t => t.month===month && t.day===day && t.zodiac===zodiac && t.dir===dir);
+  if (idx >= 0) arr.splice(idx, 1);
+  else arr.push({ month, day, zodiac, dir, tag: '' });
+  saveTripleData(arr);
+  render();
 }
 
 // ── モーダル操作 ──
@@ -435,7 +448,7 @@ function renderTripleList() {
     辰:'07-09',巳:'09-11',午:'11-13',未:'13-15',申:'15-17',酉:'17-19',戌:'19-21',亥:'21-23'};
   let h = '<div class="triple-list-title">登録済み三重丸</div>';
   for (const t of arr) {
-    const label = `5/${t.day} ${SLOT_LABEL[t.zodiac]||t.zodiac} ${t.dir}${t.tag?' ('+t.tag+')':''}`;
+    const label = `${t.month}/${t.day} ${SLOT_LABEL[t.zodiac]||t.zodiac} ${t.dir}${t.tag?' ('+t.tag+')':''}`;
     h += `<div class="triple-item">
       <span>${label}</span>
       <button class="triple-del-btn" onclick="deleteTriple(${t.month},${t.day},'${t.zodiac}','${t.dir}')">×</button>
@@ -453,7 +466,8 @@ function compassHTML(grid, month, day) {
     const triple = month ? getTriple(month, day, 'overall', dir) : null;
     const cls = triple ? 'triple' : m==='◎'?'great':m==='○'?'good':'';
     const show = triple ? '◎' : (m==='◎'||m==='○') ? m : '';
-    h += `<div class="cc ${cls}">
+    const tapHandler = month ? `onclick="toggleTriple(${month},${day},'overall','${dir}')" style="cursor:pointer"` : '';
+    h += `<div class="cc ${cls}" ${tapHandler}>
       <span class="cc-dir">${dir}</span>
       <span class="cc-mark">${show||'　'}</span>
       ${triple && triple.tag ? `<span style="font-size:9px;color:#7a0038;font-weight:bold">${triple.tag}</span>` : ''}
@@ -561,7 +575,7 @@ function render() {
         const cls = triple ? 'triple' : g.mark==='◎'?'great':'good';
         const tag = triple && triple.tag ? `<span class="tag-badge">${triple.tag}</span>` : '';
         const typeStr = g.types ? `<span class="type-badge">${g.types}</span>` : '';
-        html += `<span class="pill ${cls}">${g.dir} ${g.mark}${typeStr}${tag}</span>`;
+        html += `<span class="pill ${cls}" onclick="toggleTriple(${day.month},${day.day},'${z}','${g.dir}')">${g.dir} ${g.mark}${typeStr}${tag}</span>`;
       }
       html += '</div>';
     } else {
