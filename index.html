@@ -281,7 +281,7 @@
 
 <div id="app"></div>
 
-<div class="footer">Happy Walking 開運方位 2026年5月</div>
+<div class="footer">Happy Walking 開運方位 2026年6月</div>
 
 <button class="add-triple-btn" onclick="openModal()" title="三重丸を追加">＋</button>
 
@@ -414,9 +414,9 @@ function saveTriple() {
   const tag  = document.getElementById('f-tag').value.trim();
   const arr  = loadTriples();
   // 同じ組み合わせが既にあれば上書き
-  const idx = arr.findIndex(t => t.month===5 && t.day===day && t.zodiac===zodiac && t.dir===dir);
+  const idx = arr.findIndex(t => t.month===6 && t.day===day && t.zodiac===zodiac && t.dir===dir);
   if (idx>=0) arr[idx].tag = tag;
-  else arr.push({ month:5, day, zodiac, dir, tag });
+  else arr.push({ month:6, day, zodiac, dir, tag });
   saveTripleData(arr);
   renderTripleList();
   render();
