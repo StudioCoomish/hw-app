@@ -286,7 +286,12 @@
 
 <div class="footer">Happy Walking 開運方位 2026年6月</div>
 
-<!-- add-triple-btn は非表示（タップで直接トグルに変更） -->
+<!-- 下部ナビゲーション -->
+<div style="display:flex; justify-content:center; gap:12px; padding:16px 0 32px; background:#f0f4fa;">
+  <button class="nav-btn" id="btn-prev-bottom" onclick="move(-1)">‹</button>
+  <button class="nav-today" onclick="move(0)">今日</button>
+  <button class="nav-btn" id="btn-next-bottom" onclick="move(1)">›</button>
+</div>
 
 <div id="modal-overlay" style="display:none" class="modal-overlay" onclick="closeModal(event)">
   <div class="modal-sheet" onclick="event.stopPropagation()">
@@ -410,6 +415,23 @@ function editTag(month, day, zodiac, dir) {
   render();
 }
 
+// ── タッチ長押し検出（iOS対応） ──
+let _longPressTimer = null;
+let _longPressTarget = null;
+document.addEventListener('touchstart', e => {
+  const el = e.target.closest('[data-triple]');
+  if (!el) return;
+  _longPressTarget = el;
+  _longPressTimer = setTimeout(() => {
+    const {m, d, z, dir} = el.dataset;
+    editTag(+m, +d, z, dir);
+    _longPressTimer = null;
+  }, 600);
+}, {passive: true});
+document.addEventListener('touchend',    () => { clearTimeout(_longPressTimer); _longPressTimer = null; }, {passive: true});
+document.addEventListener('touchcancel', () => { clearTimeout(_longPressTimer); _longPressTimer = null; }, {passive: true});
+document.addEventListener('touchmove',   () => { clearTimeout(_longPressTimer); _longPressTimer = null; }, {passive: true});
+
 // ── モーダル操作 ──
 function openModal() {
   // 日付セレクトを今表示中の日にデフォルト設定
@@ -478,8 +500,8 @@ function compassHTML(grid, month, day) {
     const triple = month ? getTriple(month, day, 'overall', dir) : null;
     const cls = triple ? 'triple' : m==='◎'?'great':m==='○'?'good':'';
     const show = triple ? '◎' : (m==='◎'||m==='○') ? m : '';
-    const editAttr = (month && triple) ? `oncontextmenu="editTag(${month},${day},'overall','${dir}');return false;"` : '';
-    const tapHandler = month ? `onclick="toggleTriple(${month},${day},'overall','${dir}')" style="cursor:pointer" ${editAttr}` : '';
+    const tripleAttrCC = (month && triple) ? `data-triple data-m="${month}" data-d="${day}" data-z="overall" data-dir="${dir}"` : '';
+    const tapHandler = month ? `onclick="toggleTriple(${month},${day},'overall','${dir}')" style="cursor:pointer" ${tripleAttrCC}` : '';
     h += `<div class="cc ${cls}" ${tapHandler}>
       <span class="cc-dir">${dir}</span>
       <span class="cc-mark">${show||'　'}</span>
@@ -521,8 +543,14 @@ function render() {
   const todayIdx = DATA.findIndex(x=>x.year===now.getFullYear()&&x.month===now.getMonth()+1&&x.day===now.getDate());
   const btnPrev = document.getElementById('btn-prev');
   const btnNext = document.getElementById('btn-next');
-  if (btnPrev) btnPrev.disabled = (todayIdx !== -1 && offset <= -todayIdx);
-  if (btnNext) btnNext.disabled = (todayIdx !== -1 && offset >= DATA.length - 1 - todayIdx);
+  const btnPrevB = document.getElementById('btn-prev-bottom');
+  const btnNextB = document.getElementById('btn-next-bottom');
+  const isPrevDis = (todayIdx !== -1 && offset <= -todayIdx);
+  const isNextDis = (todayIdx !== -1 && offset >= DATA.length - 1 - todayIdx);
+  if (btnPrev)  btnPrev.disabled  = isPrevDis;
+  if (btnNext)  btnNext.disabled  = isNextDis;
+  if (btnPrevB) btnPrevB.disabled = isPrevDis;
+  if (btnNextB) btnNextB.disabled = isNextDis;
 
   let day = DATA.find(x=>x.year===y&&x.month===mo&&x.day===d);
   const wd = day ? day.weekday : WD[target.getDay()];
@@ -588,8 +616,8 @@ function render() {
         const cls = triple ? 'triple' : g.mark==='◎'?'great':'good';
         const tag = triple && triple.tag ? `<span class="tag-badge">${triple.tag}</span>` : '';
         const typeStr = g.types ? `<span class="type-badge">${g.types}</span>` : '';
-        const editHandler = triple ? `oncontextmenu="editTag(${day.month},${day.day},'${z}','${g.dir}');return false;"` : '';
-        html += `<span class="pill ${cls}" onclick="toggleTriple(${day.month},${day.day},'${z}','${g.dir}')" ${editHandler}>${g.dir} ${g.mark}${typeStr}${tag}</span>`;
+        const tripleAttr = triple ? `data-triple data-m="${day.month}" data-d="${day.day}" data-z="${z}" data-dir="${g.dir}"` : '';
+        html += `<span class="pill ${cls}" onclick="toggleTriple(${day.month},${day.day},'${z}','${g.dir}')" ${tripleAttr}>${g.dir} ${g.mark}${typeStr}${tag}</span>`;
       }
       html += '</div>';
     } else {
